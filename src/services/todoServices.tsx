@@ -63,3 +63,17 @@ export const createTodo = async (todoData: CreateTodoDTO): Promise<Todo> => {
             throw error
         }
     }
+
+    export const deleteTodo = async (id: number): Promise<void> => {
+        try {
+            const res = await fetch(`${API_URL}/todos/${id}`, {
+                method: "DELETE"
+            });
+            if(!res.ok) {
+                throw new Error("Gagal menghapus todo");
+            }
+        } catch (error) {
+            console.error("Error deleting todo:", error)
+            throw error
+        }
+    }

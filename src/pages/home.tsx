@@ -1,12 +1,16 @@
 import type { Todo } from '../types/types';
 import { useState, useEffect } from 'react';
 import TodoItem from '../components/TodoItems';
-import { getTodos, createTodo, updateTodo } from "../services/todoServices";
+import { getTodos, createTodo, updateTodo, deleteTodo } from "../services/todoServices";
+
 
 
 export default function Home() {
     // State
-    const [todos, setTodos] = useState<Todo[]>([]);
+    const [todos, setTodos] = useState<Todo[]>(() => {
+    const stored = localStorage.getItem("todos");
+    return stored ? JSON.parse(stored) : [];
+});
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -56,13 +60,20 @@ export default function Home() {
         }
     }
 
-    const handleTodoDelete = (id: number) => {
-        setTodos(todos.filter(todo => todo.id !== id));
+    const handleTodoDelete = async (id: number) => {
+        try {
+            await deleteTodo(id);
+            setTodos(todos.filter(todo => todo.id !== id));
+        } catch (error) {
+            setError("Gagal menghapus todo");
+        }
     }
 
     useEffect(() => {
+       if(todos.length === 0) {
         const fetchTodos = async () => {
             setLoading(true);
+            setError(null);
             try {
                 const data = await getTodos();
                 setTodos(data);
@@ -71,9 +82,15 @@ export default function Home() {
             } finally {
                 setLoading(false);
             }
-        };
+        }; 
         fetchTodos();
+    }
     }, []);
+
+    useEffect(() => {
+    localStorage.setItem("todos", JSON.stringify(todos));
+}, [todos]);
+
 
     const completedCount = todos.filter((todo) => todo.completed).length;
     const pendingCount = todos.length - completedCount;
@@ -81,7 +98,7 @@ export default function Home() {
     return (
         <main className="min-h-screen px-4 py-10 sm:px-6">
             <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-                <section className="overflow-hidden rounded-[32px] border border-white/70 bg-white/85 p-6 shadow-[0_20px_80px_rgba(15,23,42,0.10)] backdrop-blur sm:p-8">
+                <section className="overflow-hidden rounded-4xl border border-white/70 bg-white/85 p-6 shadow-[0_20px_80px_rgba(15,23,42,0.10)] backdrop-blur sm:p-8">
                     <div className="mb-8 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
                         <div className="max-w-xl">
                             <p className="mb-3 inline-flex rounded-full bg-sky-100 px-3 py-1 text-xs font-bold tracking-[0.24em] text-sky-700 uppercase">
@@ -132,7 +149,7 @@ export default function Home() {
                     </div>
                 </section>
 
-                <section className="rounded-[32px] border border-white/70 bg-white/80 p-5 shadow-[0_18px_60px_rgba(15,23,42,0.08)] backdrop-blur sm:p-6">
+                <section className="rounded-4xl border border-white/70 bg-white/80 p-5 shadow-[0_18px_60px_rgba(15,23,42,0.08)] backdrop-blur sm:p-6">
                     <div className="mb-5 flex items-center justify-between">
                         <div>
                             <h2 className="text-xl font-bold text-slate-900">Daftar Tugas</h2>

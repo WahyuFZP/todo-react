@@ -10,8 +10,10 @@ export const CreateTodoSchema = z.object({
     id: z.number(),
     title: z
         .string()
+        .trim()
         .min(2, { message: "Title tidak boleh kosong" })
         .max(255, { message: "Title tidak boleh lebih dari 255 karakter" }),
+        
     completed: z.boolean().optional(),
 })
 
@@ -19,6 +21,7 @@ export const UpdateTodoSchema = z.object({
     id: z.number(),
     title: z
         .string()
+        .trim()
         .min(2, { message: "Title tidak boleh kosong" })
         .max(255, { message: "Title tidak boleh lebih dari 255 karakter" }),
     completed: z.boolean().optional(),

@@ -18,11 +18,17 @@ export default function Home() {
     const handleAddTodo = async () => {
         if(input.trim() === "") return;
 
+        // JSONPlaceholder (dan beberapa mock API lain) sering mengembalikan `id` yang sama
+        // untuk setiap POST. Kalau `id` duplikat, toggle/update berbasis id akan ikut kena semua.
+        const clientId = Date.now();
+
         try {
-            const newTodo = await createTodo({ 
+            const newTodo = await createTodo({
+                id: clientId,
                 title: input,
+                completed: false,
             });
-            setTodos([...todos, newTodo]);
+            setTodos((prev) => [...prev, { ...newTodo, id: clientId }]);
             setInput("");
         } catch (err) {
             setError("Gagal menambahkan todo");
@@ -46,13 +52,13 @@ export default function Home() {
 
         try  {
             const updatedTodo = await updateTodo({
-                id,
+                id: id,
                 title: newTitle,
                 completed: target.completed,
             })
-            setTodos(todos.map(todo => 
+            setTodos((prev) => prev.map(todo => 
                 todo.id === id
-                ? updatedTodo
+                ? {...todo, title: updatedTodo.title}
                 : todo
             ))
         } catch (error) {
@@ -70,7 +76,7 @@ export default function Home() {
     }
 
     useEffect(() => {
-       if(todos.length === 0) {
+       if(todos.length > 0) return
         const fetchTodos = async () => {
             setLoading(true);
             setError(null);
@@ -84,8 +90,7 @@ export default function Home() {
             }
         }; 
         fetchTodos();
-    }
-    }, []);
+    }, [todos]);
 
     useEffect(() => {
     localStorage.setItem("todos", JSON.stringify(todos));

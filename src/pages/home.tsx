@@ -1,102 +1,86 @@
 import type { Todo } from '../types/types';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import TodoItem from '../components/TodoItems';
 import { getTodos, createTodo, updateTodo, deleteTodo } from "../services/todoServices";
 
 
-
 export default function Home() {
     // State
-    const [todos, setTodos] = useState<Todo[]>(() => {
-    const stored = localStorage.getItem("todos");
-    return stored ? JSON.parse(stored) : [];
-});
     const [input, setInput] = useState("");
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-
+   
+    // Query Tanstack React untuk fetching data todos
+    const { data: todos = [], isLoading, error } = useQuery({
+        queryKey: ["todos"],
+        queryFn: getTodos,
+        staleTime: Infinity
+    });
+    const queryClient = useQueryClient();
+    
+    const createMutation = useMutation({
+        mutationFn: createTodo,
+        onSuccess: (newTodo) => {
+           queryClient.setQueryData(["todos"], 
+            (oldTodos: Todo[] = []) => {
+            return [...oldTodos, newTodo];
+           });
+        }
+    });
     const handleAddTodo = async () => {
         if(input.trim() === "") return;
-
-        // JSONPlaceholder (dan beberapa mock API lain) sering mengembalikan `id` yang sama
-        // untuk setiap POST. Kalau `id` duplikat, toggle/update berbasis id akan ikut kena semua.
-        const clientId = Date.now();
-
-        try {
-            const newTodo = await createTodo({
-                id: clientId,
-                title: input,
-                completed: false,
-            });
-            setTodos((prev) => [...prev, { ...newTodo, id: clientId }]);
-            setInput("");
-        } catch (err) {
-            setError("Gagal menambahkan todo");
-        }
+     
+        createMutation.mutate({
+            title: input,
+            completed: false
+        });
+        setInput("");
     };
 
+    
     const handleTodoToggleComplete = async (id: number) => {
-        setTodos(todos.map(todo => 
-            todo.id === id
-            ? {...todo, completed: !todo.completed}
-            : todo
-        ))
-    }
-
-    const handleTodoUpdate = async(id: number) => {
-        const newTitle = prompt("Enter new title");
-        if(!newTitle) return;
-
         const target = todos.find(todo => todo.id === id);
         if(!target) return;
+    }
 
-        try  {
-            const updatedTodo = await updateTodo({
-                id: id,
+    const updateMutation = useMutation({
+        mutationFn: updateTodo,
+        onSuccess: (_, variables) => {
+            console.log("update id:", variables.id);
+            queryClient.setQueryData(["todos"], (oldTodos: Todo[] = []) => {
+                return oldTodos.map(todo => {
+                    console.log("checking:", todo.id);
+                    return todo.id === variables.id ? { ...todo, title: variables.title } : todo;
+                });
+            });
+        }
+    });
+
+
+    const handleTodoUpdate = async(id: number) => {
+        const newTitle = prompt("Masukkan judul baru:");
+        const target = todos.find(todo => todo.id === id);
+        if(!newTitle || newTitle.trim() === "") return;
+        try {
+            updateMutation.mutate({
+                id,
                 title: newTitle,
-                completed: target.completed,
-            })
-            setTodos((prev) => prev.map(todo => 
-                todo.id === id
-                ? {...todo, title: updatedTodo.title}
-                : todo
-            ))
+                completed: target?.completed ?? false
+            });
         } catch (error) {
-            setError("Gagal mengupdate todo");
+            console.error("Error updating todo:", error);
         }
     }
 
     const handleTodoDelete = async (id: number) => {
         try {
             await deleteTodo(id);
-            setTodos(todos.filter(todo => todo.id !== id));
+            queryClient.invalidateQueries({ queryKey: ["todos"] });
         } catch (error) {
-            setError("Gagal menghapus todo");
+            console.error("Error deleting todo:", error);
         }
     }
 
-    useEffect(() => {
-       if(todos.length > 0) return
-        const fetchTodos = async () => {
-            setLoading(true);
-            setError(null);
-            try {
-                const data = await getTodos();
-                setTodos(data);
-            } catch (err) {
-                setError("Gagal mengambil data todos");
-            } finally {
-                setLoading(false);
-            }
-        }; 
-        fetchTodos();
-    }, [todos]);
-
-    useEffect(() => {
-    localStorage.setItem("todos", JSON.stringify(todos));
-}, [todos]);
-
-
+   
     const completedCount = todos.filter((todo) => todo.completed).length;
     const pendingCount = todos.length - completedCount;
 

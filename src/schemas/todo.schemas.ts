@@ -7,7 +7,6 @@ export const TodoSchema = z.object({
 })
 
 export const CreateTodoSchema = z.object({
-    id: z.number(),
     title: z
         .string()
         .trim()

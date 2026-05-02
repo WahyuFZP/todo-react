@@ -1,5 +1,6 @@
 import type { Todo } from '../types/types';
 
+
 type Props = {
     todo: Todo;
     onToggleComplete: (id: number) => void;

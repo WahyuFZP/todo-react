@@ -5,7 +5,6 @@ export type Todo = {
 }
 
 export type CreateTodoDTO = {
-    id: number;
     title: string;
     completed?: boolean;
 }

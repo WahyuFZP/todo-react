@@ -89,16 +89,28 @@ export default function Home() {
         }
     }
 
+    // Optimistic update untuk delete tanpa perlu refetch data
     const handleTodoDelete = async (id: number) => {
         try {
             await deleteTodo(id);
-            queryClient.invalidateQueries({ queryKey: ["todos"] });
+            queryClient.setQueryData(["todos"], (oldTodos: Todo[] = []) => {
+                return oldTodos.filter(todo => todo.id !== id);
+            });
         } catch (error) {
             console.error("Error deleting todo:", error);
         }
     }
 
-   
+    // Menggunakan invalidateQueries untuk refresh data setelah delete
+    // const handleTodoDelete = async (id: number) => {
+    //     try {
+    //         await deleteTodo(id);
+    //        queryClient.invalidateQueries();
+    //     } catch (error) {
+    //         console.error("Error deleting todo:", error);
+    //     }
+    // }
+
     const completedCount = todos.filter((todo) => todo.completed).length;
     const pendingCount = todos.length - completedCount;
 

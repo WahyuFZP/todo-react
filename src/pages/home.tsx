@@ -36,12 +36,19 @@ export default function Home() {
     };
 
     const handleTodoToggleComplete = async (id: number) => {
+        const target = todos.find(todo => todo.id === id);
+        if(!target) return;
+
+        try {
         setTodos(todos.map(todo => 
             todo.id === id
             ? {...todo, completed: !todo.completed}
             : todo
         ))
+    } catch (error) {       
+        setError("Gagal memperbarui status todo");
     }
+}
 
     const handleTodoUpdate = async(id: number) => {
         const newTitle = prompt("Enter new title");

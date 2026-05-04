@@ -37,9 +37,29 @@ export default function Home() {
     };
 
     
-    const handleTodoToggleComplete = async (id: number) => {
-        const target = todos.find(todo => todo.id === id);
-        if(!target) return;
+    const toggleMutation = useMutation({
+        mutationFn: updateTodo,
+        onSuccess: (_, variables) => {
+            console.log("toggle id:", variables.id);
+            queryClient.setQueryData(["todos"], (oldTodos: Todo[] = []) => {
+                return oldTodos.map(todo => {
+                    // console.log("checking:", todo.id);
+                    return todo.id === variables.id 
+                    ? { ...todo, completed: variables.completed } 
+                    : todo;
+                })
+            })
+        }
+    })
+    const handleTodoToggleComplete = async (id:number, completed: boolean) => {
+        try {
+            toggleMutation.mutate({
+                id,
+                completed,
+            })
+        } catch (error) {
+            console.error("Error toggling todo:", error);
+        }
     }
 
     const updateMutation = useMutation({
@@ -48,14 +68,12 @@ export default function Home() {
             console.log("update id:", variables.id);
             queryClient.setQueryData(["todos"], (oldTodos: Todo[] = []) => {
                 return oldTodos.map(todo => {
-                    console.log("checking:", todo.id);
+                    // console.log("checking:", todo.id);
                     return todo.id === variables.id ? { ...todo, title: variables.title } : todo;
                 });
             });
         }
     });
-
-
     const handleTodoUpdate = async(id: number) => {
         const newTitle = prompt("Masukkan judul baru:");
         const target = todos.find(todo => todo.id === id);

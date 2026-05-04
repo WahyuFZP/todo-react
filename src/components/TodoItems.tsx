@@ -3,7 +3,7 @@ import type { Todo } from '../types/types';
 
 type Props = {
     todo: Todo;
-    onToggleComplete: (id: number) => void;
+    onToggleComplete: (id: number, completed: boolean) => void;
     onDelete: (id: number) => void;
     onUpdate: (id: number) => void;
 }
@@ -12,7 +12,7 @@ export default function Todoitems({ todo, onToggleComplete, onDelete, onUpdate }
     return (
         <div className="flex flex-col gap-4 rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md sm:flex-row sm:items-center sm:justify-between">
             <button
-                onClick={() => onToggleComplete(todo.id)}
+                onClick={() => onToggleComplete(todo.id, !todo.completed)}
                 className="flex flex-1 items-start gap-3 text-left"
             >
                 <span

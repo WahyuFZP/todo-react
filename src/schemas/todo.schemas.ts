@@ -22,7 +22,8 @@ export const UpdateTodoSchema = z.object({
         .string()
         .trim()
         .min(2, { message: "Title tidak boleh kosong" })
-        .max(255, { message: "Title tidak boleh lebih dari 255 karakter" }),
+        .max(255, { message: "Title tidak boleh lebih dari 255 karakter" })
+        .optional(),        
     completed: z.boolean().optional(),
 })
 
